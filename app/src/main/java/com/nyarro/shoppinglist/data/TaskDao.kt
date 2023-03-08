@@ -6,13 +6,23 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.nyarro.shoppinglist.ui.tasks.SortOrder
 import kotlinx.coroutines.flow.Flow
 
 
 @Dao
 interface TaskDao {
-    @Query("SELECT * FROM task_table where name LIKE '%' || :searchQuery || '%' ORDER BY important DESC")
-    fun getTasks(searchQuery: String) : Flow<List<Task>>
+
+    fun getTasks(query: String, sortOrder: SortOrder, hideCompleted: Boolean) : Flow <List<Task>> =
+        when(sortOrder) {
+            SortOrder.BY_DATE -> getTasksSortedByDateCreated(query, hideCompleted)
+            SortOrder.BY_NAME -> getTasksSortedByName(query, hideCompleted)
+        }
+    @Query("SELECT * FROM task_table where ( completed != :hideCompleted or completed = 0) and name LIKE '%' || :searchQuery || '%' ORDER BY important DESC, name")
+    fun getTasksSortedByName(searchQuery: String, hideCompleted: Boolean) : Flow<List<Task>>
+
+    @Query("SELECT * FROM task_table where ( completed != :hideCompleted or completed = 0) and name LIKE '%' || :searchQuery || '%' ORDER BY important DESC, created")
+    fun getTasksSortedByDateCreated(searchQuery: String, hideCompleted: Boolean) : Flow<List<Task>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(task: Task)
