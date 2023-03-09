@@ -9,6 +9,7 @@ import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -17,6 +18,7 @@ import com.nyarro.shoppinglist.R
 import com.nyarro.shoppinglist.data.SortOrder
 import com.nyarro.shoppinglist.data.Task
 import com.nyarro.shoppinglist.databinding.FragmentTasksBinding
+import com.nyarro.shoppinglist.util.exhaustive
 import com.nyarro.shoppinglist.util.onQueryTextChanged
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
@@ -56,26 +58,38 @@ class TaskFragment : Fragment(R.layout.fragment_tasks), TasksAdapter.OnItemClick
                     viewModel.onTaskSwiped(task)
                 }
             }).attachToRecyclerView(recyclerViewTasks)
-        }
-            viewModel.tasks.observe(viewLifecycleOwner) {
-                tasksAdapter.submitList(it)
+
+            fabAddTask.setOnClickListener {
+                viewModel.onAddNewTaskCLick()
             }
+        }
+        viewModel.tasks.observe(viewLifecycleOwner) {
+            tasksAdapter.submitList(it)
+        }
 
         viewLifecycleOwner.lifecycleScope.launchWhenStarted {
-            viewModel.tasksEvent.collect {
-                event -> when(event) {
-                    is TasksViewModel.TasksEvent.ShowUndoDeleteTaskMessage ->{
-                        Snackbar.make(requireView(),"Deleted", Snackbar.LENGTH_LONG )
-                            .setAction("UNDO"){
+            viewModel.tasksEvent.collect { event ->
+                when (event) {
+                    is TasksViewModel.TasksEvent.ShowUndoDeleteTaskMessage -> {
+                        Snackbar.make(requireView(), "Deleted", Snackbar.LENGTH_LONG)
+                            .setAction("UNDO") {
                                 viewModel.onUndoDeleteClick(event.task)
-                            } .show()
+                            }.show()
                     }
-                }
+                    is TasksViewModel.TasksEvent.NavigateToAddTaskScreen -> {
+                        val action = TaskFragmentDirections.actionTaskFragmentToAddEditTaskFragment(null, "New Task")
+                        findNavController().navigate(action)
+                    }
+                    is TasksViewModel.TasksEvent.NavigateToEditTaskScreen -> {
+                        val action = TaskFragmentDirections.actionTaskFragmentToAddEditTaskFragment(event.task, "Edit Task")
+                        findNavController().navigate(action)
+                    }
+                }.exhaustive
             }
         }
 
-            setHasOptionsMenu(true)
-        }
+        setHasOptionsMenu(true)
+    }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.menu_fragment_tasks, menu)
@@ -93,33 +107,33 @@ class TaskFragment : Fragment(R.layout.fragment_tasks), TasksAdapter.OnItemClick
         }
     }
 
-        override fun onOptionsItemSelected(item: MenuItem): Boolean {
-            return when (item.itemId) {
-                R.id.action_sort_by_name -> {
-                    viewModel.onSortOrderSelected(SortOrder.BY_NAME)
-                    true
-                }
-                R.id.action_sort_by_date_created -> {
-                    viewModel.onSortOrderSelected(SortOrder.BY_DATE)
-                    true
-                }
-                R.id.action_hide_completed_tasks -> {
-                    item.isChecked = !item.isChecked
-                    viewModel.onHideCompletedClick(item.isChecked)
-                    true
-                }
-                R.id.action_delete_all_completed_tasks -> {
-                    true
-                }
-                else -> super.onOptionsItemSelected(item)
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_sort_by_name -> {
+                viewModel.onSortOrderSelected(SortOrder.BY_NAME)
+                true
             }
-        }
-
-        override fun onItemClick(task: Task) {
-            viewModel.onTaskSelected(task)
-        }
-
-        override fun onCheckBoxClick(task: Task, isCheked: Boolean) {
-            viewModel.onTaskChekedChanged(task, isCheked)
+            R.id.action_sort_by_date_created -> {
+                viewModel.onSortOrderSelected(SortOrder.BY_DATE)
+                true
+            }
+            R.id.action_hide_completed_tasks -> {
+                item.isChecked = !item.isChecked
+                viewModel.onHideCompletedClick(item.isChecked)
+                true
+            }
+            R.id.action_delete_all_completed_tasks -> {
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
+
+    override fun onItemClick(task: Task) {
+        viewModel.onTaskSelected(task)
+    }
+
+    override fun onCheckBoxClick(task: Task, isCheked: Boolean) {
+        viewModel.onTaskChekedChanged(task, isCheked)
+    }
+}
