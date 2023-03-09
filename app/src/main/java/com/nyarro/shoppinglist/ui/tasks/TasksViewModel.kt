@@ -6,6 +6,7 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.nyarro.shoppinglist.data.PreferencesManager
 import com.nyarro.shoppinglist.data.SortOrder
+import com.nyarro.shoppinglist.data.Task
 import com.nyarro.shoppinglist.data.TaskDao
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -29,6 +30,8 @@ class TasksViewModel @ViewModelInject constructor(
         taskDao.getTasks(query, filterPrefences.sortOrder, filterPrefences.hideCompleted)
     }
 
+    val tasks = tasksFlow.asLiveData()
+
     fun onSortOrderSelected(sortOrder: SortOrder) = viewModelScope.launch {
         preferencesManager.updateSortOrder(sortOrder)
     }
@@ -37,5 +40,9 @@ class TasksViewModel @ViewModelInject constructor(
         preferencesManager.updateHideCompleted(hideCompleted)
     }
 
-    val tasks = tasksFlow.asLiveData()
+    fun onTaskSelected(task: Task) {}
+
+    fun onTaskChekedChanged(task: Task, isCheked:Boolean) = viewModelScope.launch {
+        taskDao.update(task.copy(completed = isCheked))
+    }
 }

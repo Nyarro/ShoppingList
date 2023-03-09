@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.nyarro.shoppinglist.R
 import com.nyarro.shoppinglist.data.SortOrder
+import com.nyarro.shoppinglist.data.Task
 import com.nyarro.shoppinglist.databinding.FragmentTasksBinding
 import com.nyarro.shoppinglist.util.onQueryTextChanged
 import dagger.hilt.android.AndroidEntryPoint
@@ -19,7 +20,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class TaskFragment : Fragment(R.layout.fragment_tasks) {
+class TaskFragment : Fragment(R.layout.fragment_tasks), TasksAdapter.OnItemClickListener {
 
     private val viewModel: TasksViewModel by viewModels()
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -27,7 +28,7 @@ class TaskFragment : Fragment(R.layout.fragment_tasks) {
 
         val binding = FragmentTasksBinding.bind(view)
 
-        val tasksAdapter = TasksAdapter()
+        val tasksAdapter = TasksAdapter(this)
 
         binding.apply {
             recyclerViewTasks.apply {
@@ -53,16 +54,16 @@ class TaskFragment : Fragment(R.layout.fragment_tasks) {
             viewModel.searchQuery.value = it
         }
 
-        viewLifecycleOwner.lifecycleScope.launch{
+        viewLifecycleOwner.lifecycleScope.launch {
             menu.findItem(R.id.action_hide_completed_tasks).isChecked =
                 viewModel.preferencesFlow.first().hideCompleted
         }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-       return when (item.itemId) {
+        return when (item.itemId) {
             R.id.action_sort_by_name -> {
-               viewModel.onSortOrderSelected(SortOrder.BY_NAME)
+                viewModel.onSortOrderSelected(SortOrder.BY_NAME)
                 true
             }
             R.id.action_sort_by_date_created -> {
@@ -79,5 +80,13 @@ class TaskFragment : Fragment(R.layout.fragment_tasks) {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    override fun onItemClick(task: Task) {
+        viewModel.onTaskSelected(task)
+    }
+
+    override fun onCheckBoxClick(task: Task, isCheked: Boolean) {
+        viewModel.onTaskChekedChanged(task, isCheked)
     }
 }
