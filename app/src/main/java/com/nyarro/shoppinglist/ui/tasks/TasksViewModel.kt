@@ -7,6 +7,8 @@ import com.nyarro.shoppinglist.data.PreferencesManager
 import com.nyarro.shoppinglist.data.SortOrder
 import com.nyarro.shoppinglist.data.Task
 import com.nyarro.shoppinglist.data.TaskDao
+import com.nyarro.shoppinglist.ui.ADD_TASK_RESULT_OK
+import com.nyarro.shoppinglist.ui.EDIT_TASK_RESULT_OK
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -45,7 +47,7 @@ class TasksViewModel @ViewModelInject constructor(
         preferencesManager.updateHideCompleted(hideCompleted)
     }
 
-    fun onTaskSelected(task: Task) = viewModelScope.launch{
+    fun onTaskSelected(task: Task) = viewModelScope.launch {
         tasksEventChannel.send(TasksEvent.NavigateToEditTaskScreen(task))
     }
 
@@ -63,12 +65,29 @@ class TasksViewModel @ViewModelInject constructor(
     }
 
     fun onAddNewTaskCLick() = viewModelScope.launch {
-tasksEventChannel.send(TasksEvent.NavigateToAddTaskScreen)
+        tasksEventChannel.send(TasksEvent.NavigateToAddTaskScreen)
     }
 
+    fun onAddEditResult(result: Int) {
+        when (result) {
+            ADD_TASK_RESULT_OK -> showTaskSavedConfiramtionMessage("Task added")
+            EDIT_TASK_RESULT_OK -> showTaskSavedConfiramtionMessage("Task updated")
+
+        }
+    }
+
+    private fun showTaskSavedConfiramtionMessage(text: String) = viewModelScope.launch {
+        tasksEventChannel.send(TasksEvent.ShowTaskSavefConfirmationMessage(text))
+    }
+
+    fun onDeleteAllCompletedClick() = viewModelScope.launch {
+        tasksEventChannel.send(TasksEvent.NavigateToDeleteAllCompletedScreen)
+    }
     sealed class TasksEvent {
         object NavigateToAddTaskScreen : TasksEvent()
         data class NavigateToEditTaskScreen(val task: Task) : TasksEvent()
         data class ShowUndoDeleteTaskMessage(val task: Task) : TasksEvent()
+        data class ShowTaskSavefConfirmationMessage(val msg: String) : TasksEvent()
+        object NavigateToDeleteAllCompletedScreen: TasksEvent()
     }
 }
