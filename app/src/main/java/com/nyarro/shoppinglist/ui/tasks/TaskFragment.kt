@@ -153,6 +153,7 @@ class TaskFragment : Fragment(R.layout.fragment_tasks), TasksAdapter.OnItemClick
                 viewModel.onDeleteAllCompletedClick()
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }

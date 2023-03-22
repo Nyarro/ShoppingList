@@ -37,4 +37,5 @@
         android:checkable="false"
         android:title="Delete all completed"
         app:showAsAction="never" />
+
 </menu>
